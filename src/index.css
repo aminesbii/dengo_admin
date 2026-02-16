@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+body {
+  font-family: 'Google Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* Gemini UI Theme Tokens */
+:root {
+  --primary: 34 197 94;   /* your green-500 */
+  --text: 31 31 31;      /* Gemini Light Text (#1f1f1f) */
+  --bg: 255 255 255;     /* Pure White */
+  --muted: 95 99 104;    /* Gemini Light Muted (#5f6368) */
+}
+
+[data-theme="dark"] {
+  --primary: 34 197 94;
+  --text: 231 231 231;   /* Gemini Dark Text (#e7e7e7) */
+  --bg: 19 19 20;        /* Gemini Dark Background (#131314) */
+  --muted: 154 160 166;  /* Gemini Dark Muted (#9aa0a6) */
+}
+
+html, body {
+  background-color: rgb(var(--bg));
+  color: rgb(var(--text));
+}
+
+.text-primary { color: rgb(var(--primary)) !important; }
+.bg-primary { background-color: rgb(var(--primary)) !important; }
+.border-primary { border-color: rgb(var(--primary)) !important; }
+
+/* Custom scrollbar matching Gemini's minimalist style */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.2);
+  border-radius: 10px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
