@@ -13,6 +13,11 @@ export function AuthProvider({ children }) {
 
   // Check if user is already logged in on mount
   useEffect(() => {
+    // If a token was stored previously (from login), attach it so requests work cross-origin
+    const storedToken = localStorage.getItem("adminToken");
+    if (storedToken) {
+      axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+    }
     checkAuth();
   }, []);
 
@@ -35,6 +40,11 @@ export function AuthProvider({ children }) {
   const signIn = useCallback(async (email, password) => {
     try {
       const { data } = await axiosInstance.post("/admin/auth/login", { email, password });
+      // Persist token and attach Authorization header for subsequent requests
+      if (data.token) {
+        localStorage.setItem("adminToken", data.token);
+        axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+      }
       setUser(data.user);
       setIsSignedIn(true);
       return { success: true, user: data.user };
@@ -50,6 +60,9 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
+      // Clear stored token and Authorization header
+      localStorage.removeItem("adminToken");
+      delete axiosInstance.defaults.headers.common["Authorization"];
       setUser(null);
       setIsSignedIn(false);
     }
