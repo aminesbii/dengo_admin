@@ -87,13 +87,29 @@ export const categoryApi = {
 
   // Create category (admin only)
   create: async (categoryData) => {
-    const { data } = await axiosInstance.post("/categories", categoryData);
+    const config = {};
+    let body = categoryData;
+    if (categoryData instanceof FormData) {
+      config.headers = { "Content-Type": "multipart/form-data" };
+      body = categoryData;
+    }
+    const { data } = await axiosInstance.post("/categories", body, config);
     return data;
   },
 
   // Update category (admin only)
+  // Accepts either: update({ id, ...updateData }) or update({ id, formData: FormData })
   update: async ({ id, ...updateData }) => {
-    const { data } = await axiosInstance.put(`/categories/${id}`, updateData);
+    const config = {};
+    let body = updateData;
+    if (updateData instanceof FormData) {
+      config.headers = { "Content-Type": "multipart/form-data" };
+      body = updateData;
+    } else if (updateData.formData && updateData.formData instanceof FormData) {
+      config.headers = { "Content-Type": "multipart/form-data" };
+      body = updateData.formData;
+    }
+    const { data } = await axiosInstance.put(`/categories/${id}`, body, config);
     return data;
   },
 

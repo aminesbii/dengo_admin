@@ -20,6 +20,15 @@ import {
 } from "lucide-react";
 
 const CategoriesPage = () => {
+  const API_BASE = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, "") : "";
+
+  const getImageUrl = (img) => {
+    if (!img) return img;
+    if (/^https?:\/\//i.test(img)) return img;
+    // ensure leading slash
+    const path = img.startsWith("/") ? img : `/${img}`;
+    return `${API_BASE}${path}`;
+  };
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [deleteModal, setDeleteModal] = useState({
@@ -38,6 +47,7 @@ const CategoriesPage = () => {
     description: "",
     icon: "",
     image: "",
+    imageFile: null,
     parent: "",
     isActive: true,
   });
@@ -128,6 +138,7 @@ const CategoriesPage = () => {
         description: category.description || "",
         icon: category.icon || "",
         image: category.image || "",
+        imageFile: null,
         parent: category.parent || "",
         isActive: category.isActive ?? true,
       });
@@ -138,6 +149,7 @@ const CategoriesPage = () => {
         description: "",
         icon: "",
         image: "",
+        imageFile: null,
         parent: "",
         isActive: true,
       });
@@ -151,18 +163,35 @@ const CategoriesPage = () => {
     setIsSubmitting(true);
 
     try {
-      const submitData = {
-        ...formData,
-        parent: formData.parent || null,
-      };
-
-      console.log("Submitting category:", submitData);
-
+      // Prepare payload: use FormData if uploading a file or explicitly removing image
       let result;
-      if (editingCategory) {
-        result = await categoryApi.update({ id: editingCategory._id, ...submitData });
+      const payload = { ...formData, parent: formData.parent || null };
+
+      if (formData.imageFile || (editingCategory && payload.image === "")) {
+        const fd = new FormData();
+        fd.append("name", payload.name);
+        fd.append("description", payload.description || "");
+        fd.append("icon", payload.icon || "");
+        fd.append("parent", payload.parent || "");
+        fd.append("isActive", payload.isActive ? "true" : "false");
+        fd.append("displayOrder", payload.displayOrder || "0");
+        // send explicit empty image to remove
+        if (payload.image === "") {
+          fd.append("image", "");
+        }
+        if (formData.imageFile) fd.append("image", formData.imageFile);
+
+        if (editingCategory) {
+          result = await categoryApi.update({ id: editingCategory._id, formData: fd });
+        } else {
+          result = await categoryApi.create(fd);
+        }
       } else {
-        result = await categoryApi.create(submitData);
+        if (editingCategory) {
+          result = await categoryApi.update({ id: editingCategory._id, ...payload });
+        } else {
+          result = await categoryApi.create(payload);
+        }
       }
 
       console.log("Category saved successfully:", result);
@@ -231,7 +260,7 @@ const CategoriesPage = () => {
               <div className="flex items-center gap-3">
                 {category.image ? (
                   <img
-                    src={category.image}
+                    src={getImageUrl(category.image)}
                     alt={category.name}
                     className="w-10 h-10 rounded-lg object-cover"
                   />
@@ -498,6 +527,34 @@ const CategoriesPage = () => {
                     className="input input-bordered"
                     placeholder="https://..."
                   />
+                  <label className="label mt-2">
+                    <span className="label-text">Or upload image</span>
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+                      setFormData({ ...formData, imageFile: file });
+                    }}
+                    className="file-input file-input-bordered w-full"
+                  />
+                  {formData.imageFile && (
+                    <div className="mt-2">
+                      <img src={URL.createObjectURL(formData.imageFile)} alt="preview" className="w-20 h-20 object-cover rounded" />
+                      <div>
+                        <button type="button" className="btn btn-xs btn-ghost mt-2" onClick={() => setFormData({ ...formData, imageFile: null })}>Remove</button>
+                      </div>
+                    </div>
+                  )}
+                  {(!formData.imageFile && formData.image) && (
+                    <div className="mt-2">
+                      <img src={getImageUrl(formData.image)} alt="current" className="w-20 h-20 object-cover rounded" />
+                      <div>
+                        <button type="button" className="btn btn-xs btn-ghost mt-2" onClick={() => setFormData({ ...formData, image: "" })}>Remove</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
